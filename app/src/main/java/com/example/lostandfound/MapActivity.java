@@ -1,5 +1,7 @@
 package com.example.lostandfound;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -55,19 +57,25 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap map) {
         googleMap = map;
 
-        // Add markers to the map
-        LatLng deakinUniversity = new LatLng(-37.8479, 145.1155);
-        googleMap.addMarker(new MarkerOptions().position(deakinUniversity).title("Deakin University"));
+        // Retrieve latitude and longitude values from the database and add markers to the map
+        AdvertDbHelper dbHelper = new AdvertDbHelper(this);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        String[] projection = {AdvertDbHelper.COLUMN_LATITUDE, AdvertDbHelper.COLUMN_LONGITUDE};
+        Cursor cursor = db.query(AdvertDbHelper.TABLE_NAME, projection, null, null, null, null, null);
 
-        LatLng boxHillCentral = new LatLng(-37.8197, 145.1251);
-        googleMap.addMarker(new MarkerOptions().position(boxHillCentral).title("Box Hill Central"));
+        while (cursor.moveToNext()) {
+            double latitude = cursor.getDouble(cursor.getColumnIndexOrThrow(AdvertDbHelper.COLUMN_LATITUDE));
+            double longitude = cursor.getDouble(cursor.getColumnIndexOrThrow(AdvertDbHelper.COLUMN_LONGITUDE));
 
-        LatLng melbourneCentral = new LatLng(-37.8102, 144.9629);
-        googleMap.addMarker(new MarkerOptions().position(melbourneCentral).title("Melbourne Central"));
+            LatLng position = new LatLng(latitude, longitude);
+            googleMap.addMarker(new MarkerOptions().position(position));
+        }
+
+        cursor.close();
 
         // Set a default location and zoom level
-        LatLng defaultLocation = new LatLng(-37.8479, 145.1155);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f));
+        LatLng defaultLocation = new LatLng(-37.8445, 145.1123);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 12f));
     }
 
 }

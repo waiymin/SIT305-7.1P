@@ -40,6 +40,7 @@ public class CreateAdvertActivity extends AppCompatActivity {
 
     private static final int AUTOCOMPLETE_REQUEST_CODE = 1;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 2;
+
     private AdvertDbHelper dbHelper;
     private FusedLocationProviderClient fusedLocationClient;
 
@@ -107,6 +108,26 @@ public class CreateAdvertActivity extends AppCompatActivity {
                 values.put(AdvertDbHelper.COLUMN_DESCRIPTION, descriptionEditText.getText().toString());
                 values.put(AdvertDbHelper.COLUMN_LOCATION, locationEditText.getText().toString());
 
+                double latitude = 0.0;
+                double longitude = 0.0;
+                String address = locationEditText.getText().toString();
+                if (!address.isEmpty()) {
+                    Geocoder geocoder = new Geocoder(CreateAdvertActivity.this, Locale.getDefault());
+                    try {
+                        List<Address> addresses = geocoder.getFromLocationName(address, 1);
+                        if (!addresses.isEmpty()) {
+                            Address location = addresses.get(0);
+                            latitude = location.getLatitude();
+                            longitude = location.getLongitude();
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                values.put(AdvertDbHelper.COLUMN_LATITUDE, latitude);
+                values.put(AdvertDbHelper.COLUMN_LONGITUDE, longitude);
+
                 SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
                 String date = sdf.format(new Date());
                 values.put(AdvertDbHelper.COLUMN_DATE, date);
@@ -118,64 +139,6 @@ public class CreateAdvertActivity extends AppCompatActivity {
                 finish();
             }
         });
-    }
-
-    private boolean checkLocationPermission() {
-        int permissionState = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-        return permissionState == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestLocationPermission() {
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                LOCATION_PERMISSION_REQUEST_CODE);
-    }
-
-    private void getCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            double latitude = location.getLatitude();
-                            double longitude = location.getLongitude();
-                            String address = getAddressFromLocation(latitude, longitude);
-                            locationEditText.setText(address);
-                        } else {
-                            Toast.makeText(CreateAdvertActivity.this, "Failed to get current location", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-    }
-
-    private String getAddressFromLocation(double latitude, double longitude) {
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-            if (!addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
-                    sb.append(address.getAddressLine(i));
-                    if (i < address.getMaxAddressLineIndex()) {
-                        sb.append(", ");
-                    }
-                }
-                return sb.toString();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return "";
     }
 
     @Override
@@ -193,6 +156,15 @@ public class CreateAdvertActivity extends AppCompatActivity {
         }
     }
 
+    private boolean checkLocationPermission() {
+        int permissionResult = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionResult == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestLocationPermission() {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -200,8 +172,42 @@ public class CreateAdvertActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 getCurrentLocation();
             } else {
-                Toast.makeText(CreateAdvertActivity.this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    private void getCurrentLocation() {
+        if (checkLocationPermission()) {
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                double latitude = location.getLatitude();
+                                double longitude = location.getLongitude();
+                                getAddressFromLocation(latitude, longitude);
+                            } else {
+                                Toast.makeText(CreateAdvertActivity.this, "Unable to retrieve current location", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+        } else {
+            Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void getAddressFromLocation(double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+            if (!addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                String addressLine = address.getAddressLine(0);
+                locationEditText.setText(addressLine);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
