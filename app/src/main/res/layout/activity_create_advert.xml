@@ -49,6 +49,15 @@
         android:hint="Location" />
 
     <Button
+        android:id="@+id/getCurrentLocationButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/locationEditText"
+        android:layout_marginTop="8dp"
+        android:layout_alignParentEnd="true"
+        android:text="Get Current Location" />
+
+    <Button
         android:id="@+id/saveButton"
         android:layout_width="match_parent"
         android:layout_height="72dp"

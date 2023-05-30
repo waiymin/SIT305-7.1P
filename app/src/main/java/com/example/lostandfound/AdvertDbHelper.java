@@ -17,6 +17,8 @@ public class AdvertDbHelper extends SQLiteOpenHelper {
     public static final String COLUMN_DESCRIPTION = "description";
     public static final String COLUMN_DATE = "date";
     public static final String COLUMN_LOCATION = "location";
+    public static final String COLUMN_LATITUDE = "latitude";
+    public static final String COLUMN_LONGITUDE = "longitude";
 
     private static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE " + TABLE_NAME + " (" +
@@ -27,7 +29,9 @@ public class AdvertDbHelper extends SQLiteOpenHelper {
                     COLUMN_PHONE + " TEXT," +
                     COLUMN_DESCRIPTION + " TEXT," +
                     COLUMN_DATE + " TEXT," +
-                    COLUMN_LOCATION + " TEXT)";
+                    COLUMN_LOCATION + " TEXT," +
+                    COLUMN_LATITUDE + " REAL," +
+                    COLUMN_LONGITUDE + " REAL)";
 
     private static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + TABLE_NAME;
